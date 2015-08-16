@@ -14,6 +14,10 @@ module.exports = function (){
 		delete dataset[key];
 	};
 
+	this.get = function(key){
+		return dataset[key];
+	};
+
 
 };
 
