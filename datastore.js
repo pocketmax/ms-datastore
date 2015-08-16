@@ -6,5 +6,9 @@ module.exports = function (){
 		dataset[key] = val;
 	};
 
+	this.set = function(key, val){
+		dataset[key] = val;
+	};
+
 };
 
