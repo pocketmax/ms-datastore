@@ -10,5 +10,10 @@ module.exports = function (){
 		dataset[key] = val;
 	};
 
+	this.delete = function(key){
+		delete dataset[key];
+	};
+
+
 };
 
