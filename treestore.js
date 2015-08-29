@@ -1,6 +1,7 @@
-var _ = require('lodash');
+var _ = require('lodash'),
+	Redis = require("redis");
 
-var jsonPathToObj = function (path, tailData) {
+var pathToObj = function (path, tailData) {
 	var obj = {};
 	var parentObj = obj;
 	var parts = path.split("."), part;
@@ -15,40 +16,39 @@ var jsonPathToObj = function (path, tailData) {
 	return parentObj;
 };
 
+module.exports = function (cfg){
+	var client = Redis.createClient(6379, 'localdocker', {detect_buffers: true});
 
-module.exports = function (){
+	this.set = function(key, val, cb){
+		client.set(key, val, cb);
+	};
+	this.get = function(key, cb){
+		// TODO: use one of the SCAN commands instead of keys for performance reasons
+		client.keys(key + '.*', function(err, keys){
+			client.mget(keys, function(err, vals){
 
-	var dataset = {};
+				if(!vals) return false;
 
-	this.add = function(key, val){
-		dataset[key] = val;
-		return this;
+				var finalObj = {};
+				for(var i = 0; i < vals.length; i++){
+
+					finalObj = _.merge(finalObj, pathToObj(keys[i], vals[i]));
+				}
+
+				finalObj = _.get(finalObj, key);
+
+				cb(null, finalObj);
+			});
+
+		});
 	};
 
-	this.set = function(key, val){
-		dataset[key] = val;
-		return this;
-	};
-
-	this.delete = function(key){
-		delete dataset[key];
-		return this;
-	};
-
-	this.get = function(key){
-
-		var prevObj = {};
-
-		for(var i in dataset){
-			if(new RegExp('^' + key).test(i)){
-				// merge matching objects together based on key path
-				var obj = jsonPathToObj(i,dataset[i]);
-				prevObj = _.merge(prevObj, obj);
-
-			}
-		}
-
-		return prevObj;
+	this.del = function(key, cb){
+		client.keys(key + '.*', function(err, keys){
+			client.del(keys, function(err, results){
+				cb(null, results);
+			});
+		});
 	};
 
 
